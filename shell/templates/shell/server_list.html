@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+
+
+
+
+{% block server_list %}
+    <div id="server_list" class="tree-demo" role="tree"></div>
+
+{% endblock %}
+
+{% block js-tail %}
+<script src="{% static 'js/jstree/jstree.js' %}"></script>
+<script type="application/javascript">
+    $("#server_list").jstree({
+        core: {
+            'themes': {
+                'name': 'proton',
+                'responsive': true
+            },
+            check_callback: !0,
+            data: [
+                {
+                    text: "V20",
+                    children: [
+                        {% for server in 20servers %}
+                        {text: "{{ server }}", icon: "fa fa-server", ip: "{{ server }}", state: {selected: !0},hostname:"{{ server }}"},
+                        {% endfor %}
+                    ]
+                },
+                {
+                    text: "V30",
+                    children: [
+                        {% for server in 30servers %}
+                        {text: "{{ server }}", icon: "fa fa-server", ip: "{{ server }}", state: {selected: !0},hostname:"{{ server }}"},
+                        {% endfor %}
+                    ]
+                }
+            ]
+        },
+        types: {
+            "default": {icon: "fa fa-folder icon-state-warning icon-lg"},
+            file: {icon: "fa fa-file icon-state-warning icon-lg"}
+        },
+        state: {key: "demo2"},
+        plugins: ["contextmenu", "state", "types", "search"],
+        contextmenu: {}
+    }).on('show_contextmenu.jstree', function(e, reference, element) {
+        if ( reference.node.parents.length < 2 ) {
+            $('.vakata-context').remove();
+        }
+    });
+</script>
+{% endblock %}
+
