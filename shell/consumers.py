@@ -10,7 +10,7 @@ from shell.interactive import interactive_shell,get_redis_instance,SshTerminalTh
 import sys
 from django.utils.encoding import smart_unicode
 from django.core.exceptions import ObjectDoesNotExist
-from shell.models import ServerInfor,ServerGroup,CommandsSequence,SshLog
+from shell.models import Credential,ServerGroup,CommandsSequence, SshLog
 from shell.sudoterminal import ShellHandlerThread
 import ast 
 import time
@@ -29,8 +29,7 @@ class webterminal(WebsocketConsumer):
 
     
     def connect(self, message):
-        self.message.reply_channel.send({"accept": True})     
-        #permission auth
+        self.message.reply_channel.send({"accept": True})
         self.message.reply_channel.send({"text":json.dumps(['channel_name',self.message.reply_channel.name])},immediately=True)
         
     def disconnect(self, message):
@@ -54,8 +53,7 @@ class webterminal(WebsocketConsumer):
         #close threading
         self.queue().publish(self.message.reply_channel.name, json.dumps(['close']))
         
-    def receive(self,text=None, bytes=None, **kwargs):
-        print locals()
+    def receive(self, text=None, bytes=None, **kwargs):
         try:
             if text:
                 data = json.loads(text)
@@ -64,37 +62,25 @@ class webterminal(WebsocketConsumer):
                     ip = data[1]
                     width = data[2]
                     height = data[3]
+                    key_pair = data[4]
                     self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                     try:
-                        data = ServerInfor.objects.get(ip=ip)
-                        port = data.credential.port
-                        method = data.credential.method
-                        username = data.credential.username
-                        audit_log = SshLog.objects.create(user=User.objects.get(username=self.message.user),server=data,channel=self.message.reply_channel.name,width=width,height=height)
+                        credential = Credential.objects.get(name=key_pair)
+                        audit_log = SshLog.objects.create(user=User.objects.get(username=self.message.user),server=data[1],channel=self.message.reply_channel.name,width=width,height=height)
                         audit_log.save()
-
-                        if method == 'password':
-                            password = data.credential.password
-                        else:
-                            key = data.credential.password
                     except ObjectDoesNotExist:
                         self.message.reply_channel.send({"text":json.dumps(['stdout','\033[1;3;31mConnect to server! Server ip doesn\'t exist!\033[0m'])},immediately=True)
-                        self.message.reply_channel.send({"accept":False})                        
+                        self.message.reply_channel.send({"accept":False})
+
                     try:
-                        if method == 'password':
-                            self.ssh.connect(ip, port=port, username=username, password=password, timeout=3)
-                        else:
-                            import StringIO
-                            # private_key = StringIO.StringIO(key)
-                            # k = paramiko.RSAKey.from_private_key(private_key)
-                            k = paramiko.RSAKey.from_private_key(StringIO.StringIO(key))
-                            self.ssh.connect(ip, port=port, username=username, pkey=k, timeout=3)
+                        import StringIO
+                        k = paramiko.RSAKey.from_private_key(StringIO.StringIO(credential.key))
+                        self.ssh.connect(ip, port=credential.port, username=credential.username, pkey=k, timeout=3)
                     except socket.timeout:
                         self.message.reply_channel.send({"text":json.dumps(['stdout','\033[1;3;31mConnect to server time out\033[0m'])},immediately=True)
                         self.message.reply_channel.send({"accept":False})
                         return
                     except Exception as err:
-                        print str(err)
                         self.message.reply_channel.send({"text":json.dumps(['stdout','\033[1;3;31mCan not connect to server\033[0m'])},immediately=True)
                         self.message.reply_channel.send({"accept":False})
                         return

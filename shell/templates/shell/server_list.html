@@ -1,16 +1,197 @@
 {% extends 'base.html' %}
 {% load staticfiles %}
 
+{% block css %}
+    <link rel="stylesheet" href="{% static "js/toastr/toastr.css" %}">
+    <link rel="stylesheet" href="{% static 'js/xterm/xterm.css' %}"/>
+    <link rel="stylesheet" href="{% static 'js/jstree/themes/proton/style.min.css' %}"/>
+    <link rel="stylesheet" href="{% static 'fonts/css/font-awesome.min.css' %}"/>
+{% endblock %}
 
-
+{% block page-body %}}
+<div class="row">
+    <div class="col-md-3">
+        <div class="panel">
+            <div class="panel-body">
+                <form id="search">
+                    <div class="input-group m-bot15">
+                        <input id="q" type="search" class="form-control">
+                        <span class="input-group-btn">
+                            <button class="btn btn-default" type="submit">Search</button>
+                        </span>
+                    </div>
+                </form>
+                <div id="server_list" class="tree-demo" role="tree"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-9">
+        <div class="span2 leftMenu">
+            <ul class="nav nav-tabs marginBottom" id="myTab">
+                <li class="active ">
+                    <a href="#help" class="backgroundRed">help info<button class="close closeTab" type="button" >×</button></a>
+                </li>
+            </ul>
+        </div>
+        <div class="tab-content span4">
+            <div class="tab-pane active" id="help">help info</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
 {% block server_list %}
-    <div id="server_list" class="tree-demo" role="tree"></div>
 
 {% endblock %}
 
-{% block js-tail %}
+{% block xterm %}
+
+{% endblock %}
+
+{% block js %}
+<script src="{% static 'js/xterm/xterm.js' %}"></script>
+<script src="{% static 'js/xterm/addons/fit/fit.js' %}"></script>
+<script src="{% static 'js/xterm/addons/terminado/terminado.js' %}"></script>
+<script src="{% static 'js/xterm/addons/fullscreen/fullscreen.js' %}"></script>
 <script src="{% static 'js/jstree/jstree.js' %}"></script>
+<script src="{% static "js/toastr/toastr.min.js" %}"></script>
+
+<script type="application/javascript">
+
+
+    var currentTab;
+    var composeCount = 0;
+    //initilize tabs
+    $(function () {
+
+        //when ever any tab is clicked this method will be call
+        $("#myTab").on("click", "a", function (e) {
+            e.preventDefault();
+
+            $(this).tab('show');
+            $currentTab = $(this);
+        });
+
+
+        //registerComposeButtonEvent();
+        registerCloseEvent();
+    });
+
+
+    //this method will register event on close icon on the tab..
+    function registerCloseEvent() {
+        $(".closeTab").click(function () {
+            var tabContentId = $(this).parent().attr("href");
+            $(this).parent().parent().remove(); //remove li of tab
+            $('#myTab a:last').tab('show'); // Select first tab
+            $.ajax({
+                type: "POST",
+                url: '{% url 'shell:sshterminalkill' %}',
+                dataType: "json",
+                data: {
+                    'channel_name':$(tabContentId).attr('channel_name'),
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'},
+                success: function (data) {
+
+                    if (data['status']){
+                        toastr["success"](data['message']);
+                    }
+                },
+                failure: function (errMsg) {
+                    toastr["error"](errMsg);
+                }
+            });
+            $(tabContentId).remove(); //remove respective tab content
+        });
+    }
+
+    //shows the tab with passed content div id..paramter tabid indicates the div where the content resides
+    function showTab(tabId) {
+        $('#myTab a[href="#' + tabId + '"]').tab('show');
+    }
+    //return current active tab
+    function getCurrentTab() {
+        return currentTab;
+    }
+
+
+    //this will return element from current tab
+    //example : if there are two tabs having  textarea with same id or same class name then when $("#someId") whill return both the text area from both tabs
+    //to take care this situation we need get the element from current tab.
+    function getElement(selector) {
+        var tabContentId = $currentTab.attr("href");
+        return $("" + tabContentId).find("" + selector);
+
+    }
+
+
+    function removeCurrentTab() {
+        var tabContentId = $currentTab.attr("href");
+        $currentTab.parent().remove(); //remove li of tab
+        $('#myTab a:last').tab('show'); // Select first tab
+        $(tabContentId).remove(); //remove respective tab content
+    }
+
+</script>
+<script type="application/javascript">
+    function make_terminal(element, size, ws_url,ip, key_pair) {
+        var term = new Terminal({
+            cols: size.cols,
+            rows: size.rows,
+            screenKeys: true,
+            useStyle: true,
+            cursorBlink: true  // Blink the terminal's cursor
+        });
+
+        term.open(element, false);
+        var ws = new WebSocket(ws_url);
+        ws.onopen = function (event) {
+            term.fit();
+            <!--ws.send(JSON.stringify(["set_size", size.rows, size.cols,-->
+                <!--term.cols, term.rows]));-->
+            term.resize(term.cols, term.rows);
+            ws.send(JSON.stringify(["ip", ip, term.cols, term.rows, key_pair]));
+            term.on('data', function (data) {
+                ws.send(JSON.stringify(['stdin', data]));
+            });
+
+            term.on('title', function (title) {
+                document.title = title;
+            });
+
+            term.toggleFullscreen(true);
+            ws.onmessage = function (event) {
+                json_msg = JSON.parse(event.data);
+                switch (json_msg[0]) {
+                    case "stdout":
+                        term.write(json_msg[1]);
+                        break;
+                    case "disconnect":
+                        term.write("\r\n\r\n[Finished...]\r\n");
+                        break;
+                    case "channel_name":
+                        <!--console.log(json_msg[1]);-->
+                        var channel_name_attribute = document.createAttribute('channel_name');
+                        channel_name_attribute.value = json_msg[1];
+                        element.setAttributeNode(channel_name_attribute);
+                        break;
+                }
+            };
+        };
+        return {socket: ws, term: term};
+    }
+
+    //make_terminal(document.getElementById('terminal-container1'), {rows: 40, cols: 90}, ws_path);
+//    var term = new Terminal({
+//        cols: 90,
+//        rows: 40,
+//        screenKeys: true,
+//        useStyle: true,
+//        cursorBlink: true,  // Blink the terminal's cursor
+//    });
+//    term.open(document.getElementById('terminal-container1'), false);
+//    term.write('\033[1;3;31mThis is the webterminal console Please select a server to connect!\033[0m')
+</script>
 <script type="application/javascript">
     $("#server_list").jstree({
         core: {
@@ -21,18 +202,48 @@
             check_callback: !0,
             data: [
                 {
-                    text: "V20",
+                    text: 'Staging',
                     children: [
-                        {% for server in 20servers %}
-                        {text: "{{ server }}", icon: "fa fa-server", ip: "{{ server }}", state: {selected: !0},hostname:"{{ server }}"},
+                        {%  for server_group in servers_ops %}
+                            {
+                                text: '{{ server_group.name }}',
+                                children: [
+                                    {% for server in server_group.servers %}
+                                    {% if server.state == 'running' %}
+                                        {text: "{{ server.public_ip }}", icon: "fa fa-play", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
+                                    {% elif server.state  == 'stopping'%}
+                                        {text: "{{ server.public_ip }}", icon: "fa fa-pause", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
+                                    {% elif server.state  == 'stopped'%}
+                                        {text: "{{ server.public_ip }}", icon: "fa fa-stop", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
+                                    {% elif server.state  == 'pending'%}
+                                        {text: "{{ server.public_ip }}", icon: "fa fa-gears", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
+                                    {% endif %}
+                                {% endfor %}
+                                ]
+                            },
                         {% endfor %}
                     ]
                 },
                 {
-                    text: "V30",
+                    text: 'Product',
                     children: [
-                        {% for server in 30servers %}
-                        {text: "{{ server }}", icon: "fa fa-server", ip: "{{ server }}", state: {selected: !0},hostname:"{{ server }}"},
+                        {%  for server_group in servers_prod %}
+                            {
+                                text: '{{ server_group.name }}',
+                                children: [
+                                    {% for server in server_group.servers %}
+                                    {% if server.state == 'running' %}
+                                        {text: "{{ server.public_ip }}", icon: "fa fa-play", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
+                                    {% elif server.state  == 'stopping'%}
+                                        {text: "{{ server.public_ip }}", icon: "fa fa-pause", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
+                                    {% elif server.state  == 'stopped'%}
+                                        {text: "{{ server.public_ip }}", icon: "fa fa-stop", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
+                                    {% elif server.state  == 'pending'%}
+                                        {text: "{{ server.public_ip }}", icon: "fa fa-gears", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
+                                    {% endif %}
+                                {% endfor %}
+                                ]
+                            },
                         {% endfor %}
                     ]
                 }
@@ -44,12 +255,52 @@
         },
         state: {key: "demo2"},
         plugins: ["contextmenu", "state", "types", "search"],
-        contextmenu: {}
+        contextmenu: {
+            "items": function ($node) {
+                var tree = $("#server_list").jstree(true);
+                return {
+                    "connect": {
+                        "separator_before": false,
+                        "separator_after": false,
+                        "label": "connect",
+                        "action": function (obj) {
+                            var tabId_org = $node.original.hostname;
+                            //get server ip
+
+                            var ip = $node.original.ip;
+                            var key_pair = $node.original.key_pair;
+                            var tab_count = 0;
+                            var tabId = tabId_org + '-' + tab_count;
+                            while (true){
+                                if ($('#' + tabId).length <= 0){
+                                    break
+                                } else {
+                                    tab_count++;
+                                    tabId = tabId_org + '-' + tab_count;
+                                }
+                            }
+                            $('.nav-tabs').append('<li><a href="#' + tabId + '"><button class="close closeTab" type="button" >×</button>' + tabId + '</a></li>');
+                            $('.tab-content').append('<div class="tab-pane responsive" id="' + tabId + '"></div>');
+                            showTab(tabId);
+                            registerCloseEvent();
+                            var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
+                            var ws_path = ws_scheme + '://' + window.location.host + '/ws/';
+                            make_terminal(document.getElementById(tabId), {rows: 40, cols: 90}, ws_path, ip, key_pair);
+                        }
+                    }
+                };
+            }
+        }
     }).on('show_contextmenu.jstree', function(e, reference, element) {
         if ( reference.node.parents.length < 2 ) {
             $('.vakata-context').remove();
         }
     });
+    $("#search").submit(function(e) {
+        e.preventDefault();
+        $("#server_list").jstree(true).search($("#q").val());
+    });
 </script>
+
 {% endblock %}
 

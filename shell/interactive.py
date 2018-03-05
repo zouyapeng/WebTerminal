@@ -66,7 +66,7 @@ class CustomeFloatEncoder(json.JSONEncoder):
         return json.JSONEncoder.encode(self, obj)
 
 def posix_shell(chan,channel,log_name=None,width=90,height=40):
-    from webterminal.asgi import channel_layer
+    from shell.asgi import channel_layer
     stdout = list()
     begin_time = time.time()
     last_write_time = {'last_activity_time':begin_time}    

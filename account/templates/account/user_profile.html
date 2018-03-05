@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+
+{% block title %}
+{% endblock %}
+
+{% block css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'js/bootstrap-datepicker/css/datepicker-custom.css' %}" />
+
+    <link href="{% static 'js/iCheck/skins/square/square.css' %}" rel="stylesheet">
+    <link href="{% static 'js/iCheck/skins/square/green.css' %}" rel="stylesheet">
+
+    <!--file upload-->
+    <link rel="stylesheet" type="text/css" href="{% static 'css/bootstrap-fileupload.min.css' %}" />
+{% endblock %}
+
+{% block page-header %}
+    <h1>个人信息</h1>
+{% endblock %}
+
+{% block page-body %}
+    <div class="row">
+        <div class="col-lg-12">
+            <section class="panel">
+                <header class="panel-heading">
+                    个人信息
+                </header>
+                <div class="panel-body">
+                    <form  enctype="multipart/form-data" class="form-horizontal adminex-form col-sm-12" action="{% url 'account:profile' %}" method="post">
+                        {% csrf_token %}
+                        {{ form.non_field_errors }}
+                        <div class="form-group">
+                            <label class="col-sm-2 col-sm-2 control-label">{{ form.avatar.label }}</label>
+                            <div class="col-sm-10">
+                                <div class="fileupload fileupload-new" data-provides="fileupload">
+                                    <div class="fileupload-new thumbnail" style="width: 200px; height: 150px;">
+                                        <img src="/media/{{ form.avatar.value }}" alt="" />
+                                    </div>
+                                    <div class="fileupload-preview fileupload-exists thumbnail" style="max-width: 200px; max-height: 150px; line-height: 20px;"></div>
+                                    <div>
+                                        <span class="btn btn-default btn-file">
+                                            <span class="fileupload-new"><i class="fa fa-paper-clip"></i> Select image</span>
+                                            <span class="fileupload-exists"><i class="fa fa-undo"></i> Change</span>
+                                            <input id="id_avatar" name="avatar" type="file" class="default" />
+                                        </span>
+                                        <a href="#" class="btn btn-danger fileupload-exists" data-dismiss="fileupload"><i class="fa fa-trash"></i> Remove</a>
+                                    </div>
+                                </div>
+                                <br/>
+                                <span class="label label-danger ">NOTE!</span>
+                                <span>
+                                 Attached image thumbnail is
+                                 supported in Latest Firefox, Chrome, Opera,
+                                 Safari and Internet Explorer 10 only
+                                </span>
+                                {% for error in form.avatar.errors %}
+                                    <div class="has-error">
+                                        <p class="help-block">{{ error }}</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-2 col-sm-2 control-label">{{ form.username.label }}</label>
+                            <div class="col-sm-10">
+                                {{ form.username }}
+                                {% for error in form.username.errors %}
+                                    <div class="has-error">
+                                        <p class="help-block">{{ error }}</p>
+                                    </div>
+                                {% endfor %}
+
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-2 col-sm-2 control-label"></label>
+                            <div class="col-lg-offset-2 col-lg-10">
+                                <button type="submit" class="btn btn-primary"> 修改 </button>
+                                <a role="button" href="{% url 'shell:index' %}" class="btn btn-default"> 取消 </a>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+            </section>
+        </div>
+
+        {{ object.user_profile.avatar }}
+        {{ object.username }}
+    </div>
+{% endblock %}
+
+{% block js %}
+    <!--icheck -->
+    <script src="{% static 'js/iCheck/jquery.icheck.js' %}"></script>
+    <script src="{% static 'js/icheck-init.js' %}"></script>
+
+    <script type="text/javascript" src="{% static 'js/bootstrap-datepicker/js/bootstrap-datepicker.js' %}"></script>
+
+    <!--pickers initialization-->
+    <script src="{% static 'js/pickers-init.js' %}"></script>
+
+    <!--file upload-->
+    <script type="text/javascript" src="{% static 'js/bootstrap-fileupload.min.js' %}"></script>
+{% endblock %}

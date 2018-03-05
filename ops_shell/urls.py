@@ -16,11 +16,31 @@ Including another URLconf
 from django.conf.urls import url, include
 from django.contrib import admin
 
-from shell.views import IndexView
-from shell.views import ServerListView
+#Webterminal api
+from rest_framework import routers
+from shell.api import ServerGroupViewSet,ServerInforViewSet,CommandsSequenceViewSet,CredentialViewSet
+
+from django.views.generic import RedirectView
+from django.core.urlresolvers import reverse_lazy
+from django.views.static import serve
+
+#Register webterminal api
+router = routers.DefaultRouter()
+router.register('servergroup', ServerGroupViewSet)
+router.register('serverinfo', ServerInforViewSet)
+router.register('commandssequence', CommandsSequenceViewSet)
+router.register('credential', CredentialViewSet)
+
 from shell import urls as shell_urls
+from account import urls as account_urls
+
+from settings import MEDIA_ROOT
 
 urlpatterns = [
-    url(r'^',include(shell_urls, namespace='shell')),
+    url(r'^$', RedirectView.as_view(url=reverse_lazy('shell:index')), name='index'),
+    url(r'^shell/', include(shell_urls, namespace='shell')),
+    url(r'^account/', include(account_urls, namespace='account')),
     url(r'^admin/', admin.site.urls),
+    url(r'^api/', include(router.urls)),
+    url(r'^media/(?P<path>.*)$', serve, {'document_root': MEDIA_ROOT})
 ]
