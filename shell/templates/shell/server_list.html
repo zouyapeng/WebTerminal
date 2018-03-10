@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{% static 'fonts/css/font-awesome.min.css' %}"/>
 {% endblock %}
 
-{% block page-body %}}
+{% block page-body %}
 <div class="row">
     <div class="col-md-3">
         <div class="panel">
@@ -38,14 +38,6 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block server_list %}
-
-{% endblock %}
-
-{% block xterm %}
-
 {% endblock %}
 
 {% block js %}
@@ -200,6 +192,7 @@
                 'responsive': true
             },
             check_callback: !0,
+        /*
             data: [
                 {
                     text: 'Staging',
@@ -212,11 +205,11 @@
                                     {% if server.state == 'running' %}
                                         {text: "{{ server.public_ip }}", icon: "fa fa-play", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
                                     {% elif server.state  == 'stopping'%}
-                                        {text: "{{ server.public_ip }}", icon: "fa fa-pause", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
+                                        {text: "{{ server.id }}", icon: "fa fa-pause", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
                                     {% elif server.state  == 'stopped'%}
-                                        {text: "{{ server.public_ip }}", icon: "fa fa-stop", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
+                                        {text: "{{ server.id }}", icon: "fa fa-stop", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
                                     {% elif server.state  == 'pending'%}
-                                        {text: "{{ server.public_ip }}", icon: "fa fa-gears", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
+                                        {text: "{{ server.id }}", icon: "fa fa-gears", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
                                     {% endif %}
                                 {% endfor %}
                                 ]
@@ -235,11 +228,11 @@
                                     {% if server.state == 'running' %}
                                         {text: "{{ server.public_ip }}", icon: "fa fa-play", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
                                     {% elif server.state  == 'stopping'%}
-                                        {text: "{{ server.public_ip }}", icon: "fa fa-pause", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
+                                        {text: "{{ server.id }}", icon: "fa fa-pause", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
                                     {% elif server.state  == 'stopped'%}
-                                        {text: "{{ server.public_ip }}", icon: "fa fa-stop", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
+                                        {text: "{{ server.id }}", icon: "fa fa-stop", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
                                     {% elif server.state  == 'pending'%}
-                                        {text: "{{ server.public_ip }}", icon: "fa fa-gears", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
+                                        {text: "{{ server.id }}", icon: "fa fa-gears", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
                                     {% endif %}
                                 {% endfor %}
                                 ]
@@ -247,14 +240,20 @@
                         {% endfor %}
                     ]
                 }
-            ]
+            ],
+        */
+            data: {
+                url: '/shell/{{ region }}/{{ role }}/js',
+                type: 'GET'
+            },
+            {#load_open : true#}
         },
         types: {
             "default": {icon: "fa fa-folder icon-state-warning icon-lg"},
             file: {icon: "fa fa-file icon-state-warning icon-lg"}
         },
         state: {key: "demo2"},
-        plugins: ["contextmenu", "state", "types", "search"],
+        plugins: ["contextmenu", "state", "types", "search", "json_data"],
         contextmenu: {
             "items": function ($node) {
                 var tree = $("#server_list").jstree(true);

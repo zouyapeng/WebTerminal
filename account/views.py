@@ -9,6 +9,7 @@ from forms import LoginForm, ProfileForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.models import User
 from django.forms.utils import ErrorList
+from django.shortcuts import HttpResponseRedirect
 
 from models import UserProfile
 
@@ -54,7 +55,7 @@ class LogoutView(RedirectView):
 
     def get(self, request, *args, **kwargs):
         logout(request)
-        return super(LogoutView, self).get(request, *args, **kwargs)
+        return HttpResponseRedirect('/shell')
 
 
 class Profile(FormView):
@@ -71,8 +72,6 @@ class Profile(FormView):
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
-
-        # return super(Profile, self).post(request, *args, **kwargs)
 
 
     def get(self, request, *args, **kwargs):

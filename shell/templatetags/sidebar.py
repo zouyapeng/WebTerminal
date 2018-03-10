@@ -7,8 +7,9 @@ from shell.models import Region
 register = template.Library()
 
 
-@register.inclusion_tag('sidebar.html')
-def render_sidebar():
+@register.inclusion_tag('sidebar.html', takes_context=True)
+def render_sidebar(context):
     return {
+        'request': context['request'],
         'regions': Region.objects.all(),
     }
