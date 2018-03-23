@@ -11,5 +11,6 @@ register = template.Library()
 def render_sidebar(context):
     return {
         'request': context['request'],
+        'user': context['user'],
         'regions': Region.objects.all(),
     }

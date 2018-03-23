@@ -1888,6 +1888,7 @@ ul.user-states li {
 
 .panel-heading.custom-tab {
     padding: 8px 15px;
+    text-transform: none;
 }
 
 .custom-tab ul > li > a {
@@ -4705,4 +4706,8 @@ ol.comment-list {
     background: #EFF0F4;
     border-radius: 5px;
     -webkit-border-radius: 5px;
+}
+
+.xterm-rows span {
+    display: inline-block;
 }

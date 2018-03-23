@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="{% static "js/toastr/toastr.css" %}">
     <link rel="stylesheet" href="{% static 'js/xterm/xterm.css' %}"/>
     <link rel="stylesheet" href="{% static 'js/jstree/themes/proton/style.min.css' %}"/>
-    <link rel="stylesheet" href="{% static 'fonts/css/font-awesome.min.css' %}"/>
+{#    <link rel="stylesheet" href="{% static 'fonts/css/font-awesome.min.css' %}"/>#}
 {% endblock %}
 
 {% block page-body %}
@@ -26,16 +26,25 @@
         </div>
     </div>
     <div class="col-md-9">
-        <div class="span2 leftMenu">
-            <ul class="nav nav-tabs marginBottom" id="myTab">
-                <li class="active ">
-                    <a href="#help" class="backgroundRed">help info<button class="close closeTab" type="button" >×</button></a>
-                </li>
-            </ul>
-        </div>
-        <div class="tab-content span4">
-            <div class="tab-pane active" id="help">help info</div>
-        </div>
+        <section class="panel">
+            <header class="panel-heading custom-tab ">
+                <ul class="nav nav-tabs" id="myTab">
+                    <li class="active">
+                        <a href="#help" data-toggle="tab">
+                            Help
+                            <button class="close closeTab" type="button" >&nbsp×&nbsp</button>
+                        </a>
+                    </li>
+                </ul>
+            </header>
+            <div class="panel-body">
+                <div class="tab-content">
+                    <div class="tab-pane active" id="help">
+                        Help info
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
 </div>
 {% endblock %}
@@ -126,32 +135,23 @@
 
 </script>
 <script type="application/javascript">
-    function make_terminal(element, size, ws_url,ip, key_pair) {
+    function make_terminal(element, size, ws_url,ip, key_pair, hostname) {
         var term = new Terminal({
-            cols: size.cols,
-            rows: size.rows,
+            {#cols: size.cols,#}
+            {#rows: size.rows,#}
             screenKeys: true,
             useStyle: true,
             cursorBlink: true  // Blink the terminal's cursor
         });
-
         term.open(element, false);
         var ws = new WebSocket(ws_url);
         ws.onopen = function (event) {
-            term.fit();
-            <!--ws.send(JSON.stringify(["set_size", size.rows, size.cols,-->
-                <!--term.cols, term.rows]));-->
             term.resize(term.cols, term.rows);
-            ws.send(JSON.stringify(["ip", ip, term.cols, term.rows, key_pair]));
+            ws.send(JSON.stringify(["ip", ip, term.cols, term.rows, key_pair, hostname]));
             term.on('data', function (data) {
                 ws.send(JSON.stringify(['stdin', data]));
             });
 
-            term.on('title', function (title) {
-                document.title = title;
-            });
-
-            term.toggleFullscreen(true);
             ws.onmessage = function (event) {
                 json_msg = JSON.parse(event.data);
                 switch (json_msg[0]) {
@@ -162,7 +162,6 @@
                         term.write("\r\n\r\n[Finished...]\r\n");
                         break;
                     case "channel_name":
-                        <!--console.log(json_msg[1]);-->
                         var channel_name_attribute = document.createAttribute('channel_name');
                         channel_name_attribute.value = json_msg[1];
                         element.setAttributeNode(channel_name_attribute);
@@ -192,61 +191,11 @@
                 'responsive': true
             },
             check_callback: !0,
-        /*
-            data: [
-                {
-                    text: 'Staging',
-                    children: [
-                        {%  for server_group in servers_ops %}
-                            {
-                                text: '{{ server_group.name }}',
-                                children: [
-                                    {% for server in server_group.servers %}
-                                    {% if server.state == 'running' %}
-                                        {text: "{{ server.public_ip }}", icon: "fa fa-play", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
-                                    {% elif server.state  == 'stopping'%}
-                                        {text: "{{ server.id }}", icon: "fa fa-pause", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
-                                    {% elif server.state  == 'stopped'%}
-                                        {text: "{{ server.id }}", icon: "fa fa-stop", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
-                                    {% elif server.state  == 'pending'%}
-                                        {text: "{{ server.id }}", icon: "fa fa-gears", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
-                                    {% endif %}
-                                {% endfor %}
-                                ]
-                            },
-                        {% endfor %}
-                    ]
-                },
-                {
-                    text: 'Product',
-                    children: [
-                        {%  for server_group in servers_prod %}
-                            {
-                                text: '{{ server_group.name }}',
-                                children: [
-                                    {% for server in server_group.servers %}
-                                    {% if server.state == 'running' %}
-                                        {text: "{{ server.public_ip }}", icon: "fa fa-play", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
-                                    {% elif server.state  == 'stopping'%}
-                                        {text: "{{ server.id }}", icon: "fa fa-pause", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
-                                    {% elif server.state  == 'stopped'%}
-                                        {text: "{{ server.id }}", icon: "fa fa-stop", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
-                                    {% elif server.state  == 'pending'%}
-                                        {text: "{{ server.id }}", icon: "fa fa-gears", ip: "{{ server.public_ip }}", state: {selected: !0}, hostname:"{{ server.name }}", key_pair: "{{ server.key_pair }}"},
-                                    {% endif %}
-                                {% endfor %}
-                                ]
-                            },
-                        {% endfor %}
-                    ]
-                }
-            ],
-        */
             data: {
                 url: '/shell/{{ region }}/{{ role }}/js',
                 type: 'GET'
             },
-            {#load_open : true#}
+            load_open : true
         },
         types: {
             "default": {icon: "fa fa-folder icon-state-warning icon-lg"},
@@ -278,13 +227,13 @@
                                     tabId = tabId_org + '-' + tab_count;
                                 }
                             }
-                            $('.nav-tabs').append('<li><a href="#' + tabId + '"><button class="close closeTab" type="button" >×</button>' + tabId + '</a></li>');
-                            $('.tab-content').append('<div class="tab-pane responsive" id="' + tabId + '"></div>');
+                            $('.nav-tabs').append('<li><a href="#' + tabId + '"><button class="close closeTab" type="button" > × </button>' + tabId + '</a></li>');
+                            $('.tab-content').append('<div class="tab-pane" id="' + tabId + '"></div>');
                             showTab(tabId);
                             registerCloseEvent();
                             var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
                             var ws_path = ws_scheme + '://' + window.location.host + '/ws/';
-                            make_terminal(document.getElementById(tabId), {rows: 40, cols: 90}, ws_path, ip, key_pair);
+                            make_terminal(document.getElementById(tabId), {rows: 20, cols: 80}, ws_path, ip, key_pair, $node.original.hostname);
                         }
                     }
                 };

@@ -86,7 +86,8 @@ class CommandsSequence(models.Model):
 
 
 class SshLog(models.Model):
-    server = models.GenericIPAddressField(protocol='ipv4', blank=False)
+    hostname = models.CharField(max_length=64, blank=True, null=True)
+    ip = models.GenericIPAddressField(protocol='ipv4', blank=False)
     channel = models.CharField(max_length=100, verbose_name='Channel name', blank=False, unique=True, editable=False)
     log = models.UUIDField(max_length=100, default=uuid.uuid4, verbose_name='Log name', blank=False, unique=True,
                            editable=False)
@@ -98,7 +99,7 @@ class SshLog(models.Model):
     height = models.PositiveIntegerField(default=40)
 
     def __unicode__(self):
-        return self.server
+        return self.ip
 
 
 class Region(models.Model):

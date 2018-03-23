@@ -18,6 +18,7 @@
   </title>
 
   <!--common-->
+
   <link href="{% static "css/style.css" %}" rel="stylesheet">
   <link href="{% static "css/style-responsive.css" %}" rel="stylesheet">
   {% block css %}
@@ -67,33 +68,19 @@
         <div class="wrapper">
             {% block page-body %}
             {% endblock %}
-            <div class="row">
-                <div class="col-md-3">
-                    {% block server_list %}
-                    {% endblock %}
-                </div>
-                <div class="col-md-9">
-                    {% block xterm %}
-                    {% endblock %}
-                </div>
-            </div>
         </div>
         <!--body wrapper end-->
-
-        <!--footer section start-->
         <footer>
-            web shell by ops
-        </footer>
-        <!--footer section end-->
-
-
+            2014 &copy; AdminEx by ThemeBucket
+    </footer>
     </div>
     <!-- main content end-->
 </section>
 
 <!-- Placed js at the end of the document so the pages load faster -->
 <script src="{% static "js/jquery-1.10.2.min.js" %}"></script>
-<script src="{% static "js/jquery-ui-1.9.2.custom.min.js" %}"></script>
+{#<script src="{% static "js/jquery-ui-1.9.2.custom.min.js" %}"></script>#}
+<script src="{% static "js/jquery-ui-1.10.3.min.js" %}"></script>
 <script src="{% static "js/jquery-migrate-1.2.1.min.js" %}"></script>
 <script src="{% static "js/bootstrap.min.js" %}"></script>
 <script src="{% static "js/modernizr.min.js" %}"></script>

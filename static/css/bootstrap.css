@@ -3630,6 +3630,7 @@ select[multiple].input-group-sm > .input-group-btn > .btn {
 }
 .tab-content > .tab-pane {
   display: none;
+  margin-bottom: 50px;
 }
 .tab-content > .active {
   display: block;

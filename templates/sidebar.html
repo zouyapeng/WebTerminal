@@ -12,4 +12,7 @@
             </ul>
         </li>
     {% endfor %}
+    {% if user.user_profile.role == 'Admin'%}
+        <li><a href={% url 'shell:sshlogslist' %}>Logs</a></li>
+    {% endif %}
 </ul>

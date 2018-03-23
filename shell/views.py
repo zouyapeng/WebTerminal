@@ -22,6 +22,7 @@ import json
 from django.utils.timezone import now
 from shell.models import SshLog
 from shell.interactive import get_redis_instance
+from django.conf import settings
 
 REGIONS = regions_get()
 
@@ -118,6 +119,30 @@ class ServerListView(LoginRequiredMixin, ListView):
         return context
 
 
+class SshLogList(LoginRequiredMixin, ListView):
+    model = SshLog
+    template_name = 'shell/logs.html'
+    ordering = ['-start_time']
+
+
+class SshTerminalMonitor(LoginRequiredMixin, DetailView):
+    model = SshLog
+    template_name = 'shell/shellmonitor.html'
+
+
+class SshLogPlay(LoginRequiredMixin, DetailView):
+    model = SshLog
+    template_name = 'shell/logreplay.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(SshLogPlay, self).get_context_data(**kwargs)
+        objects = kwargs['object']
+        context['logpath'] = '{0}{1}-{2}-{3}/{4}.json'.format(settings.MEDIA_URL, objects.start_time.year,
+                                                              objects.start_time.month, objects.start_time.day,
+                                                              objects.log)
+        return context
+
+
 def show_text(intance):
     if intance['state'] == 'running':
         if intance['public_ip']:
@@ -174,13 +199,14 @@ def server_list_js(request, region, role):
               'hostname': instance['name']}
              for instance in value]})
 
-        # re_data[1]['children'][0]['children'].append({
-        #     'data': 'fa fa-play',
-        #     'icon': 'fa fa-play',
-        #     'text': '47.52.27.134',
-        #     'key_pair': 'ali',
-        #     'ip': '47.52.27.134',
-        #     'hostname': 'aliyun'
-        # })
+    re_data[0]['children'][0]['children'].append({
+        'data': 'fa fa-play',
+        'icon': 'fa fa-play',
+        'text': '118.25.11.18',
+        'key_pair': 'ali',
+        'ip': '118.25.11.18',
+        'hostname': 'aliyun'
+    })
+
 
     return JsonResponse(re_data, safe=False)

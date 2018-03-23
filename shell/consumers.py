@@ -63,10 +63,11 @@ class webterminal(WebsocketConsumer):
                     width = data[2]
                     height = data[3]
                     key_pair = data[4]
+                    hostname = data[5]
                     self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                     try:
                         credential = Credential.objects.get(name=key_pair)
-                        audit_log = SshLog.objects.create(user=User.objects.get(username=self.message.user),server=data[1],channel=self.message.reply_channel.name,width=width,height=height)
+                        audit_log = SshLog.objects.create(user=User.objects.get(username=self.message.user), hostname=hostname, ip=ip, channel=self.message.reply_channel.name, width=width, height=height)
                         audit_log.save()
                     except ObjectDoesNotExist:
                         self.message.reply_channel.send({"text":json.dumps(['stdout','\033[1;3;31mConnect to server! Server ip doesn\'t exist!\033[0m'])},immediately=True)
@@ -88,7 +89,7 @@ class webterminal(WebsocketConsumer):
                     chan = self.ssh.invoke_shell(width=width, height=height,)
                     
                     #open a new threading to handle ssh to avoid global variable bug
-                    sshterminal=SshTerminalThread(self.message,chan)
+                    sshterminal=SshTerminalThread(self.message, chan)
                     sshterminal.setDaemon = True
                     sshterminal.start()     
                     
@@ -109,7 +110,7 @@ class webterminal(WebsocketConsumer):
             elif bytes:
                 self.queue().publish(self.message.reply_channel.name, json.loads(bytes)[1])
         except socket.error:
-            audit_log=SshLog.objects.get(user=User.objects.get(username=self.message.user),channel=self.message.reply_channel.name)
+            audit_log=SshLog.objects.get(user=User.objects.get(username=self.message.user), channel=self.message.reply_channel.name)
             audit_log.is_finished = True
             audit_log.end_time = now()
             audit_log.save()
@@ -159,7 +160,7 @@ class CommandExecute(WebsocketConsumer):
                         commands = ast.literal_eval(commands)
                     
                     #Run commands 
-                    commandshell = ShellHandlerThread(message=self.message,commands=commands,server_list=server_list)
+                    commandshell = ShellHandlerThread(message=self.message, commands=commands,server_list=server_list)
                     commandshell.setDaemon = True
                     commandshell.start()
                         
@@ -180,9 +181,8 @@ class SshTerminalMonitor(WebsocketConsumer):
     http_user_and_session = True
     channel_session = True
     channel_session_user = True  
-    
-    
-    def connect(self, message,channel):
+
+    def connect(self, message, channel):
         self.message.reply_channel.send({"accept": True})     
         #permission auth
         Group(channel).add(self.message.reply_channel.name)
